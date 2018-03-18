@@ -1,0 +1,115 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <sstream>
+#include <iomanip>
+
+class Time{
+    public:
+        int hours; //to store the hours part of time of transaction
+        int mins; //to store the minutes part of time of transaction
+        bool operator >(Time t2){
+            if(hours > t2.hours){
+                return true;
+            }
+            else if(hours == t2.hours && mins > t2.mins){
+                return true;
+            }
+            else{
+                return false;
+            }
+        } //operator overloading for comparing times
+};
+
+class City{
+    public:
+        std::string name; //to store the name of the city
+        Time time; //to store the transaction time
+};
+
+//a function that places the new city element in its correct place among the sorted entries
+void sortByCity(std::vector <City> &sortedList, City newCity){
+    City c = newCity;
+    std::string n = newCity.name;
+    sortedList.push_back(c); //adding this city to the end of the existing sorted vector
+    int j = sortedList.size() - 2;
+    //carrying out an insertion sort of the city into its correct position
+    //first comparing with city names
+    while(j >= 0 && sortedList[j].name.compare(n) > 0){
+        sortedList[j+1] = sortedList[j];
+        j--;
+    }
+    sortedList[j+1] = c;
+    //if the same city is already present, comparing times
+    if(j >= 0 && sortedList[j].name.compare(n) == 0){
+        Time temp = sortedList[j+1].time;
+        int k = j;
+        while(k >= 0 && sortedList[k].name.compare(n) == 0 && sortedList[k].time > temp){
+            sortedList[k+1] = sortedList[k];
+            k--;
+        }
+        sortedList[k+1] = c; //inserting into correct place
+    }
+    /*else{
+        sortedList[j+1] = c; //inserting into correct place
+    }*/
+    for(int i = 0; i < sortedList.size(); i++){
+        std::cout << sortedList[i].name << " " <<  std::setfill('0') << std::setw(2) << sortedList[i].time.hours << ":" << std::setfill('0') << std::setw(2) << sortedList[i].time.mins << "\n"; //printing the sorted list at this stage
+    }
+    return;
+}
+
+int main() {
+    /* Enter your code here. Read input from STDIN. Print output to STDOUT */ 
+    int N, M;
+    std::vector <int> temp(2);
+    int i = 0;
+    std::string str, str1, tok, t;  
+    std::getline(std::cin, str);
+    std::stringstream s1(str);
+    while(s1 >> tok){
+        temp[i] = std::stoi(tok);
+        i++;
+        if(i == 2){
+            break;
+        }
+    }
+    N = temp[0];
+    M = temp[1];
+    
+    std::vector <City> sorted_list(N);
+    std::vector <City> rem_list(M);
+    
+    for(i = 0; i < N; i++){
+        std::getline(std::cin, str);
+        std::stringstream s(str);
+        s >> sorted_list[i].name;
+        //std::transform((sorted_list[i].name).begin(), (sorted_list[i].name).end(), (sorted_list[i].name).begin(), ::tolower);
+        s >> tok;
+        t =  tok.substr(0,2);
+        sorted_list[i].time.hours = std::stoi(t);
+        t =  tok.substr(3,2);
+        sorted_list[i].time.mins = std::stoi(t);
+    }
+    
+    for(i = 0; i < M; i++){
+        std::getline(std::cin, str);
+        std::stringstream s11(str);
+        s11 >> rem_list[i].name;
+        //std::transform((rem_list[i].name).begin(), (rem_list[i].name).end(), (rem_list[i].name).begin(), ::tolower);
+        s11 >> tok;
+        t =  tok.substr(0,2);
+        rem_list[i].time.hours = std::stoi(t);
+        t =  tok.substr(3,2);
+        rem_list[i].time.mins = std::stoi(t);
+    }
+    
+    for(i = 0; i < M; i++){
+        sortByCity(sorted_list, rem_list[i]);
+    }
+    
+    return 0;
+}
