@@ -1,0 +1,160 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <sstream>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <stack>
+
+class Student{
+	public:
+		int id;
+		int isInMain;
+		void initialize();
+		void joinMain();
+};
+
+void Student::initialize(){
+	isInMain = 0;
+}
+
+void Student::joinMain(){
+	isInMain = 1;
+}
+
+class MyStack{
+	public:
+		std::stack <Student> sub;
+		std::stack <Student> temp;	
+		int myNumQ;
+		int size();
+};
+
+int MyStack::size(){
+	return sub.size();
+}
+
+void swap(MyStack arr[], int ind1, int ind2){
+	MyStack temp;
+	temp = arr[ind1];
+	arr[ind1] = arr[ind2];
+	arr[ind2] = temp;
+}
+
+//selection sort algorithm to sort the subqueues in the order of the number of students not yet in the main queue
+void sort(MyStack array[], int num){
+	int i, j, minInd = 0;
+	for(i = 0; i < num; i++){
+		minInd = i;
+		for(j = i+1; j < num; j++){
+			if(array[j].myNumQ < array[minInd].myNumQ){
+				minInd = j;
+			}
+		}
+		if(i != minInd){
+			swap(array, i, minInd);
+		}
+	}
+}
+
+//Here, I have visualised the main "queue" as a combination of two stacks
+void print(std::stack <Student> s1, std::stack <Student> s2){	
+	while(!(s1.empty())){
+		s2.push(s1.top()); //we dequeue elements one by one, to reverse the stack first
+		s1.pop();  
+	}
+
+	while(!(s2.empty())){
+		std::cout << (s2.top()).id << " "; //now, we print the students' IDs
+		s2.pop();
+	}
+
+	std::cout << "\n";
+}
+
+//standard linear search algorithm, to check if a student with given ID is present in the main queue or not
+int search(int arr[], int b, int x){
+	int i;
+	for(i = 0; i < b; i++){
+		if(arr[i] == x){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int main(){
+	int N;
+	int b;
+	std::cin >> N;
+	int mainArr[100]; //an array to store the IDs of the students in the main queue initially
+	int j = 0;
+	std::string mQ;
+	std::string tok;
+	int val;
+	std::cin.ignore();
+	std::stack <Student> mainQueue1;
+	std::stack <Student> mainQueue2;
+	std::getline(std::cin, mQ);
+	std::stringstream m1(mQ);	
+	while(m1 >> tok){
+		val = std::stoi(tok);
+		Student s;
+		s.id = val;
+		mainArr[j] = val;
+		j++;
+		s.isInMain = 1;
+		mainQueue1.push(s);
+	}
+    
+	b = mainQueue1.size();
+	
+	MyStack array[N-1]; //an array of objects denoting subqueues
+
+	int i;
+	std::string str;
+	for(i = 0; i < N-1; i++){		
+		std::getline(std::cin, str);
+		std::stringstream str1(str);
+		
+		while(str1 >> tok){
+			val = std::stoi(tok);
+			Student s;
+			s.id = val;
+			s.isInMain = search(mainArr, b, val);
+			(array[i].sub).push(s);
+		}
+	}
+
+	int g;
+
+    //finding how many students in each subqueue are not yet part of the main queue
+	for(i = 0; i < N-1; i++){
+		while(array[i].sub.top().isInMain == 0){
+			array[i].temp.push(array[i].sub.top());
+			array[i].sub.pop();
+		}
+        //at the end of this, the temp stack contains the students in the subqueue that are not part of the main queue 
+		array[i].myNumQ = array[i].temp.size();
+	}
+
+    //sorting the array of subqueues based on the number of students not yet in the main queue
+	sort(array, N-1);
+
+    //appending the subqueues to the main queue in the order of their lengths
+	for(i = 0; i < N-1; i++){
+		while(!((array[i].temp).empty())){
+			mainQueue1.push((array[i].temp).top()); //enqueue operation
+			(array[i].temp).pop();
+			(mainQueue1.top()).joinMain();
+		}
+	}
+
+    //printing the final single queue
+	print(mainQueue1, mainQueue2);
+	
+	return 0;
+}	
