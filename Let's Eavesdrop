@@ -1,0 +1,179 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <sstream>
+
+class Word{
+    public:
+        std::string word; //stores the word
+        int freq; //stores the frequency of the word
+        int spid; //to store the speaker id
+        Word(){
+            freq = 1;
+        } //default constructor that initializes the frequency of a new word to one
+};
+
+class Speaker{
+    public:
+        int id; //stores the ID of the speaker
+        std::vector <Word> words_spoken; //to store all the words spoken by the speaker
+};
+
+class sp_sort{
+    public:
+        int type;
+        sp_sort(int t){
+            type = t;
+        }
+        bool operator()(Word word1, Word word2){
+            //first we check which of the two words has a higher frequency
+            if(word1.freq > word2.freq){
+                return true;
+            }
+            else if(word1.freq < word2.freq){
+                return false;
+            }
+            else if(word1.freq == word2.freq){ //in case of same frequencies
+                //in case of type 1, we use lexicographic ordering of the words
+                if(type == 1){
+                    if(word1.word.compare(word2.word) < 0){
+                        return true;    
+                    }
+                    else{
+                        return false;
+                    }                   
+                }
+                //in case of type 2, we use reverse ordering of the speaker ids
+                else if(type == 2){
+                    if(word1.spid < word2.spid){
+                        return false;    
+                    }
+                    else{
+                        return true;
+                    }
+                }
+            }
+            return true;
+        }
+}; //functor, acting as a comparator to use in the standard sort function
+
+int isPresent(std::vector <Word> vec, std::string wor){
+    int i;
+    for(i = 0; i < vec.size(); i++){
+        if(vec[i].word.compare(wor) == 0){
+            return i;
+        }
+    }
+    return -1;
+} //a function to check whether a word is already present in the list
+
+int isPresentSp(int id, std::vector <Speaker> vec){
+    int i;
+    for(i = 0; i < vec.size(); i++){
+        if(vec[i].id == id){
+            return i;
+        }
+    }
+    return -1;
+} //a function to check if a speaker is already present in the list
+
+int main() { 
+    int N, k;
+    std::vector <int> temp(2);
+    int i = 0;
+    std::string str, str1, tok, tempid;  
+    std::getline(std::cin, str);
+    std::stringstream s1(str);
+    while(s1 >> tok){
+        temp[i] = std::stoi(tok);
+        i++;
+        if(i == 2){
+            break;
+        }
+    }
+    N = temp[0];
+    k = temp[1];
+    std::vector <Speaker> speakers; //a vector of speakers   
+    int id;
+    int l, index, spInd, spWordInd;
+    std::vector <Word> words; //a vector that stores information about all the words uttered during the conversation
+    for(i = 0; i < N; i++){
+        std::getline(std::cin, str);
+        std::stringstream s(str);
+        s >> tempid;
+        id = std::stoi(tempid); //storing the id of the speaker
+        spInd = isPresentSp(id, speakers);
+        if(spInd == -1){ //if the speaker is not yet present in the list, then the speaker is added
+            Speaker newSpeaker;
+            newSpeaker.id = id;
+            speakers.push_back(newSpeaker);
+            spInd = speakers.size()-1;
+        }
+        l = str.length();
+		str1 = str.substr(2, l-2); //the string that represents the sentence spoken by the speaker
+        std::transform(str1.begin(), str1.end(), str1.begin(), ::tolower); //converting the entire sentence to lower case
+        for(int y = 0; y < str1.length(); y++){
+            if(!(isalpha(str1[y])) && !(isdigit(str1[y]))){
+                str1[y] = ' '; //replacing all special characters with spaces
+            }
+        }
+		std::stringstream ss(str1);        
+        while(ss >> tok){
+            if(tok.empty()){
+                continue;
+            }
+            index = isPresent(words, tok); //checking if the word is already present in the list of all words spoken as yet
+            spWordInd = isPresent(speakers[spInd].words_spoken, tok); //checking if the word has already been spoken by this speaker
+            if(index != -1){
+                words[index].freq++;
+            }
+            else{
+                Word newWord;
+                newWord.word = tok;
+                words.push_back(newWord);
+            }
+            if(spWordInd != -1){
+                speakers[spInd].words_spoken[spWordInd].freq++;
+            }
+            else{
+                Word newWord;
+                newWord.word = tok;
+                speakers[spInd].words_spoken.push_back(newWord);
+            }
+        }
+    }
+    int n = words.size();    
+    sort(words.begin(), words.begin() + n, sp_sort(1));
+    
+    int n1, in, g, h;
+    for(i = 0; i < k; i++){ //for printing the k most frequently spoken words
+        std::cout << words[i].word << " ";
+        std::vector <Word> sp; //to store the info about which speakers spoke those words
+        for(h = 0; h < speakers.size(); h++){
+            in = isPresent(speakers[h].words_spoken, words[i].word);
+            if(in != -1){
+                Word neww;
+                neww.word = speakers[h].words_spoken[in].word;
+                neww.freq = speakers[h].words_spoken[in].freq;
+                neww.spid = speakers[h].id; 
+                sp.push_back(neww);
+            }            
+        }
+        n1 = sp.size();
+        sort(sp.begin(), sp.begin() + n1, sp_sort(2));
+        for(g = 0; g < n1; g++){
+            if(sp[g].freq == sp[0].freq){
+                std::cout << sp[g].spid << " ";  //printing the speaker ids  
+            }
+            else{
+                break;
+            }
+        }
+        std::cout << "\n";
+    }
+    
+    return 0;
+}
