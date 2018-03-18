@@ -1,0 +1,200 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <sstream>
+
+//a class to store the details of a package
+class Package{
+    private:
+        std::string name; //to store the name of the package
+        int cost; //to store the cost of the package
+    public:
+        void getPackage(std::string n, int c){
+            name = n;
+            cost = c;
+        } //to initialise the private member variables
+    
+        std::string getName(){
+            return name;
+        } //returns the name of the package
+    
+        int getCost(){
+            return cost;
+        } //returns the cost of the package
+};
+
+//a class to store the details of a destination
+class Destination{
+    private:
+        int tourism_quotient; //to store the tourism quotient of the destination
+        std::vector <Package> packages; //to store the list of all the available packages for that destination
+        int k; //number of packages
+    public:
+        void getTQ(int t){
+            tourism_quotient = t;
+        } //to initialise the tourism quotient
+    
+        void getDestPackList(int j, std::vector <Package> &p){
+            k = j;
+            packages.resize(k);
+            int i;
+            for(i = 0; i < k; i++){
+                packages[i] = p[i];
+            }
+        } //to initialise the private member variables
+    
+        int getTourQuo(){
+            return tourism_quotient;
+        } //returns the tourism quotient of the destination
+    
+        int getNumOfPack(){
+            return k;
+        } //returns the number of available packages for the destination
+    
+        Package getPackage(int index){
+            return packages[index];
+        } //returns the package at the given index
+};
+
+//a class to store the details of the person's tour plan
+class Tour{
+    public:
+        int N; //to store the number of destinations
+        std::vector <Destination> D; //to store the details of the destinations
+        std::vector <Package> finPackList; //to store the list of finally selected packages, with minimum total cost    
+};
+
+int main() {
+    /* Enter your code here. Read input from STDIN. Print output to STDOUT */ 
+    int n, val;
+    
+    //taking the input
+    std::cin >> n;
+    std::cin.ignore();
+    Tour T;
+    T.N = n;
+    T.D.resize(n);
+    T.finPackList.resize(n);
+    int i = 0;
+    std::string str, tok, nam;
+    
+    //taking the tourism quotients of all the destinations
+    std::getline(std::cin, str);
+    std::stringstream s(str);
+    while(s >> tok){
+        T.D[i].getTQ(std::stoi(tok));
+        i++;
+        if(i == n){
+            break;
+        }
+    }
+    
+    int j;
+    //taking the packages list of each destination
+    for(i = 0; i < n; i++){
+        j = 0;
+        Package temp;
+        std::vector <Package> pack;
+        std::getline(std::cin, str);
+        std::stringstream s(str);
+        while(s >> tok){
+            nam = tok;
+            s >> tok;
+            val = std::stoi(tok);
+            temp.getPackage(nam, val);  
+            pack.push_back(temp);
+            j++;
+        }
+        T.D[i].getDestPackList(j, pack);
+    }
+        
+    int flag;
+    
+    for(i = 0; i < n; i++){
+        T.finPackList[i] = T.D[i].getPackage(0);
+    } //initialising all the selected packages to the corresponding least expensive package
+    
+    Package p1, p2;
+    //The following code is where I have used the dynamic programming technique.
+    for(i = 0; i < n-1; i++){
+        //comparing two adjacent packages at a time
+        p1 = T.finPackList[i];
+        p2 = T.finPackList[i+1];
+        
+        if(T.D[i].getTourQuo() == T.D[i+1].getTourQuo()){
+            continue;
+        } //valid case
+        else if(T.D[i].getTourQuo() > T.D[i+1].getTourQuo() && p1.getCost() > p2.getCost()){
+            continue;
+        } //valid case
+        else if(T.D[i].getTourQuo() < T.D[i+1].getTourQuo() && p1.getCost() < p2.getCost()){
+            continue;
+        } //valid case
+        else{
+            if(T.D[i].getTourQuo() < T.D[i+1].getTourQuo() && p1.getCost() >= p2.getCost()){ 
+                //First invalid case: if the tourism quotients are in increasing order, but the costs are in decreasing order
+                //Then, we try to select the least highest cost for the second destination that is 
+                //higher than the selected cost for the first destination.
+                j = 0;
+                flag = 0;
+                while(j < T.D[i+1].getNumOfPack()){
+                    if(T.D[i+1].getPackage(j).getCost() > T.finPackList[i].getCost()){
+                        T.finPackList[i+1] = T.D[i+1].getPackage(j);
+                        flag = 1;
+                        break;
+                    }
+                    j++;
+                }
+                if(flag != 1){
+                    std::cout << "-1\n";
+                    return 0;
+                } //if that is not possible, that means we can't find the optimal set of packages satisfying the given constraints
+            }
+            else if(T.D[i].getTourQuo() > T.D[i+1].getTourQuo() && p1.getCost() <= p2.getCost()){
+                //Seocond invalid case: if the tourism quotients are in decreasing order, but the costs are in increasing order
+                //Then, we assign the least highest cost for the first destination that is higher than the second one, 
+                //and backtrack to check if the previous pair od destinations also satisfy the constraints.
+                //If not, then we keep backtracking/modifying till we reach two destinations where the constraint is satisfied.
+                j = i;
+		        int y;
+                flag = 0;
+		        while(T.D[j].getTourQuo() > T.D[j+1].getTourQuo()){
+		            if(T.finPackList[j].getCost() > T.finPackList[j+1].getCost() || j < 0){
+			             break;
+		            }
+		            for(y = 0; y < T.D[j].getNumOfPack(); y++){
+			            if(T.D[j].getPackage(y).getCost() > T.finPackList[j+1].getCost()){
+			                T.finPackList[j] = T.D[j].getPackage(y);
+			                break;  
+			            }
+		            }
+		            if(y == T.D[j].getNumOfPack()){
+                        std::cout << "-1\n";
+                        return 0;
+                    } //If we come out of the loop only at the end, without ever breaking out in between, that means, 
+                      //we couldn't find an optimal tour satisfying all the constraints...
+                    j--;
+                }
+            }            
+        } 
+    }
+    
+    int totCost = 0;
+    //calculating the total cost
+    for(i = 0; i < n; i++){
+        totCost += T.finPackList[i].getCost();
+    }
+    std::cout << totCost << "\n";
+    
+    //printing out the selected packages
+    for(i = 0; i < n; i++){
+        std::cout << T.finPackList[i].getName() << " ";
+    }
+    
+    std::cout << "\n";
+    
+    return 0;
+}
