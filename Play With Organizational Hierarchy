@@ -1,0 +1,381 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <stack>
+
+class Employee {
+    private:
+        int sup_id; // unique obj_id of the supervisor
+        int obj_id; // a unique id for the object
+        int obj_val; // the data value of the object (employee id), that may change
+
+        Employee *left_subordinate;   //pointer to the left child subordinate
+        Employee *right_subordinate;  //pointer to the right child subordinate
+        Employee *parent_supervisor;  //pointer to the parent supervisor
+
+    public:
+        Employee* retLeftSub(){
+            return left_subordinate;
+        } //function to return the pointer to the left subordinate
+
+        Employee* retRightSub(){
+            return right_subordinate;
+        } //function to return the pointer to the right subordinate
+    
+        Employee* retParentSup(){
+            return parent_supervisor;
+        } //function to return the pointer to the parent supervisor
+
+        int retSupID(){
+            return sup_id;
+        } //function to return the supervisor's id
+
+        int retObjID(){
+            return obj_id;
+        } //function to return the object id
+
+        int retEmpVal(){
+            return obj_val;
+        } //function to return the value of the employee id
+
+        void initLeftSub(Employee* ptr){
+            left_subordinate = ptr;
+        } //function to initialise the left subordinate
+
+        void initRightSub(Employee* ptr){
+            right_subordinate = ptr;
+        } //function to initialise the left subordinate
+    
+        void initParentSup(Employee* ptr){
+            parent_supervisor = ptr;
+        } //function to return the pointer to the parent supervisor
+
+        void initSupID(int id){
+            sup_id = id;
+        } //function to initialise the supervisor id
+
+        void initObjID(int id){
+            obj_id = id;
+        } //function to initialise the object id
+
+        void initEmpVal(int id){
+            obj_val = id;
+        } //function to initialise the employee's id value
+
+};
+
+class Hierarchy{
+    public:
+        std::vector <Employee> List;                  //a vector to store the list of details of all employees
+        int N;                                        //stores the number of employees    
+        std::stack <Employee*> EmpStack1;             //a stack of employees for the in-order print
+        std::stack <Employee*> EmpStack2;             //a stack of employees for the pre-order print
+
+        Employee* root;                               //a pointer to the root of the hierarchy tree
+
+        int height(Employee* node){
+            if(node == NULL){
+                return 0;
+            }
+            else{
+                    int lh = height(node->retLeftSub());     
+                    int rh = height(node->retRightSub());
+ 
+                    //height = 1 + max(height of left subtree, height of right subtree), by definition
+                    if(lh > rh){
+                        return(lh + 1);
+                    }
+                    else{
+                        return(rh + 1);
+                    }
+            }
+        } //returns the height of the node in the tree
+        
+        void levelOrderPrint(){
+            int h = height(root);
+            int i;
+            for(i = 1; i <= h; i++){
+                printCurrLev(root, i);    //printing the nodes at level i
+            }
+            std::cout << "\n";
+        } //to print the employee ids level-wise
+ 
+        void printCurrLev(Employee* root, int level){
+            if(root == NULL){
+                return;
+            }
+
+            if(level == 1){
+                std::cout << root->retEmpVal() << " ";
+            }
+
+            else if(level > 1){
+                printCurrLev(root->retLeftSub(), level-1);
+                printCurrLev(root->retRightSub(), level-1);
+            }
+        } //a recursive function to print the employee ids at a given level
+
+        void levelOrderProduct(){
+            int h = height(root);
+            int i, prod;
+            for(i = 1; i <= h; i++){
+                prod = 1;
+                std::cout << i << " ";
+                printCurrLevProd(root, i, &prod);
+		        std::cout << prod << " ";
+            }
+            std::cout << "\n";
+        } //to print the product of employee ids at each level
+
+        void printCurrLevProd(Employee* node, int level, int* prod){
+            if(node == NULL){
+                return;
+            }
+
+            if(level == 1){
+                *prod = (*prod)*(node->retEmpVal());
+            }
+
+            else if(level > 1){
+                printCurrLevProd(node->retLeftSub(), level-1, prod);
+                printCurrLevProd(node->retRightSub(), level-1, prod);
+            }
+        } //to print the product of employee ids at a given level 
+
+        void inOrderPrint(){
+            Employee *curr;
+            curr = root;
+            bool flag = false;
+ 
+            while (!flag){
+                if(curr !=  NULL){
+                    EmpStack1.push(curr);                                               
+                    curr = curr->retLeftSub();                  //continuously push all the nodes on the left going path
+                }        
+                else{                                           //when there are no more left nodes on this path 
+                    if(EmpStack1.size() != 0){
+                        curr = EmpStack1.top();                 //pop the top of the stack
+                        EmpStack1.pop();
+                        std::cout << curr->retEmpVal() << " ";  //print the value of that node
+                        curr = curr->retRightSub();             //now move on to the right subtree from here, and continue
+                    }
+                    else{
+                        flag = true;                            //when all the nodes have been popped, the process is completed
+                    }
+                }
+            }
+            std::cout << "\n";
+        } //to print the employee ids by inorder traversal, using stack
+
+        void preOrderPrint(){
+            if(root == NULL){
+                return;
+            }
+            
+            EmpStack2.push(root);                                //start by pushing the root node onto the stack
+            Employee* node;
+            
+            while(!EmpStack2.empty()){                           //while stack is not empty, there are still nodes to be processed
+                node = EmpStack2.top();                          //pop the topmost node, print its value
+                std::cout << node->retEmpVal() << " ";
+                EmpStack2.pop();
+ 
+                if(node->retRightSub() != NULL){
+                    EmpStack2.push(node->retRightSub());         //push its children onto the stack, if any, and continue
+                }
+                if(node->retLeftSub() != NULL){
+                    EmpStack2.push(node->retLeftSub());
+                }
+            }
+            std::cout << "\n";
+        } //to print the employee ids by pre order traversal, using stack
+
+        int computeHopLength(Employee* node){
+            if(node == NULL){
+                return 0;
+            }
+ 
+            //The task is to find the longest path length in the graph. For this, we can use a divide-and-conquer approach.
+            //The longest path is either one that is entirely in the left subtree, or entirely in the right subtree, 
+            //or a path that is spread among both the subtrees. We need the maximum of these three entities.
+            //The longest path that is spread among both the subtrees is one that goes from the bottommost leaf in 
+            //one subtree to the root, and then to the bottommos leaf in the other subtree, essentially, sum of heights 
+            //of the two subtrees.
+            
+            int hop = height(node->retLeftSub()) + height(node->retRightSub());  //longest path spread among both subtrees
+            int lHop = computeHopLength(node->retLeftSub());                     //longest path in left subtree
+            int rHop = computeHopLength(node->retRightSub());                    //longest path in right subtree
+ 
+            int maxHop;                                                          //to store the max path length in the graph
+            
+            //computing the maximum of these three entities
+            if(lHop > rHop){
+                if(lHop > hop){
+                    maxHop = lHop;
+                }
+                else{
+                    maxHop = hop;
+                }
+            }
+            else{
+                if(rHop > hop){
+                    maxHop = rHop;
+                }
+                else{
+                    maxHop = hop;
+                }
+            }
+            
+            return (maxHop + 1);
+        } //to compute the max of hop(i,j)
+
+        void modifyEmpID(Employee* node){
+            if(node->retLeftSub() == NULL && node->retRightSub() != NULL){ 
+                modifyEmpID(node->retRightSub());
+                int b, c;
+                b = node->retRightSub()->retEmpVal();
+                c = node->retEmpVal();
+            
+                if(c < b){
+                    node->initEmpVal(b);                
+                }
+                else if(c > b){
+                    node->retRightSub()->initEmpVal(c);
+                    modifyEmpID(node->retRightSub());
+                }
+            } //case where the node has only right child, and no left child
+            
+            else if(node->retRightSub() == NULL && node->retLeftSub() != NULL){
+                modifyEmpID(node->retLeftSub());
+                int a, c;
+                a = node->retLeftSub()->retEmpVal();
+                c = node->retEmpVal();
+            
+                if(c < a){
+                    node->initEmpVal(a);                
+                }
+                else if(c > a){
+                    node->retLeftSub()->initEmpVal(c);
+                    modifyEmpID(node->retLeftSub());
+                }
+            } //case where the node has only left child, and no right child
+            
+            else if(node->retRightSub() != NULL && node->retLeftSub() != NULL){
+                modifyEmpID(node->retLeftSub());
+                modifyEmpID(node->retRightSub());
+                int a, b, c;
+                a = node->retEmpVal();
+                b = node->retLeftSub()->retEmpVal();
+                c = node->retRightSub()->retEmpVal();
+            
+                if(a < b+c){
+                    node->initEmpVal(b+c);                
+                }
+                
+                else if(a > b+c){
+                    node->retLeftSub()->initEmpVal(a-c);
+                    modifyEmpID(node->retLeftSub());
+                }
+            } //case where the node has both left and right children
+            
+            else if(node->retRightSub() == NULL && node->retLeftSub() == NULL){
+                int a, b, c;
+                a = node->retParentSup()->retEmpVal();
+                b = node->retEmpVal();
+                
+                if(node->retParentSup()->retLeftSub() == node){
+                    if(node->retParentSup()->retRightSub() != NULL){
+                        c = node->retParentSup()->retRightSub()->retEmpVal();
+                        if(a > b+c){
+                            node->initEmpVal(a-c);
+                        }
+                        else if(a < b+c){
+                            node->retParentSup()->initEmpVal(b+c);
+                        }
+                    }
+                    else{
+                        if(a > b){
+                            node->initEmpVal(a);
+                        }
+                        else{
+                            node->retParentSup()->initEmpVal(b);
+                        }
+                    }
+                }
+                else if(node->retParentSup()->retRightSub() == node){
+                    if(node->retParentSup()->retLeftSub() != NULL){
+                        c = node->retParentSup()->retLeftSub()->retEmpVal();
+                        if(a > b+c){
+                            node->retParentSup()->retLeftSub()->initEmpVal(a-c);
+                        }
+                        else if(a < b+c){
+                            node->retParentSup()->initEmpVal(b+c);
+                        }
+                    }
+                    else{
+                        if(a > b){
+                            node->initEmpVal(a);
+                        }
+                        else{
+                            node->retParentSup()->initEmpVal(b);
+                        }
+                    }
+                }              
+            } //case where the node is a leaf node, base case in this function                     
+        } //to modify the employee id values according to the constraints
+};
+
+int main() {
+    /* Enter your code here. Read input from STDIN. Print output to STDOUT */   
+    
+    Hierarchy H;    
+    int n;    
+    std::cin >> n;
+    H.N = n;    
+    std::cin.ignore();    
+    H.List.resize(n);    
+    int i = 0;
+    std::string str, tok, nam;    
+    std::getline(std::cin, str);
+    std::stringstream s(str);
+    while(s >> tok){
+        H.List[i].initSupID(std::stoi(tok));
+        H.List[i].initEmpVal(i);
+        H.List[i].initObjID(i+1);
+        i++;
+        if(i == n){
+            break;
+        }
+    }    
+    
+    Employee* temp;
+    for(i = 0; i < n; i++){
+        temp = &(H.List[i]);
+        if(H.List[i].retSupID() == -1){
+            H.root = temp;
+        }
+        else{
+            temp->initParentSup(&(H.List[temp->retSupID()]));
+            if(temp->retParentSup()->retLeftSub() == NULL){
+                temp->retParentSup()->initLeftSub(temp);
+            }
+            else{
+                temp->retParentSup()->initRightSub(temp);
+            }
+        }
+    }    
+    
+    std::cout << H.height(H.root) << "\n";
+    H.levelOrderPrint();
+    H.levelOrderProduct();
+    H.preOrderPrint();
+    H.modifyEmpID(H.root);
+    H.inOrderPrint();
+    std::cout << H.computeHopLength(H.root) << "\n";
+    
+    return 0;
+}
