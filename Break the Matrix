@@ -1,0 +1,408 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <iostream>
+
+#include <string>
+#include <sstream>
+#include <cmath>
+
+#include <bits/stdc++.h>
+
+bool comp(int a, int b){
+    if(std::abs(a) > std::abs(b)){
+        return 1;
+    }
+    else if(std::abs(b) > std::abs(a)){
+        return 0;        
+    }
+    else{
+        return a>b;
+    }
+}
+//a function that sorts the input array in ascending order
+void sort1(int array[], int size){
+	int i, temp, j;
+
+	for(i = 1; i < size; i++){
+		temp = array[i];
+		j = i-1;
+		while(j >= 0 && array[j] > temp){
+			array[j+1] = array[j];
+           		j--;
+        }
+		array[j+1] = temp;
+	}
+}
+
+//returns the minimum element of an array
+int min(int arr[], int size){
+	sort1(arr, size);
+	return arr[0];
+}
+
+//returns the maximum element of an array
+int max(int arr[], int size){
+	sort1(arr, size);
+	return arr[size-1];
+}
+
+//a class to represent a matrix
+class Matrix{
+    public:
+        int r; //no. of rows
+        int c; //no. of columns
+        int matrix[100][100]; //the matrix itself, assuming maximum size
+        void print(){
+    		int i, j;
+    		for(i = 0; i < r; i++){
+    			for(j = 0; j < c; j++){
+    				std::cout << matrix[i][j] << " ";
+    			}
+    			std::cout << "\n";
+    		}
+    	} //to print the elements of the matrix		
+        
+    	 int funMSM(int colInd[], int curr){
+            int x, y, i, j;
+            if(curr == 0){      
+                 return 1;
+            }
+      
+            x = matrix[curr][colInd[curr]];  
+            if (matrix[curr-1][0] >= x) return 0;
+       
+            for(i = c-1; i >= 0; i--){
+                if((matrix[curr-1][i] < x)){
+                    break;
+                }
+            }          
+            while(i >= 0){
+                colInd[curr-1] = i;
+                if(funMSM(colInd, curr-1)){
+                    return 1;
+                }
+                i--;
+            }
+            return 0;
+        }
+    
+        //operator overloading, for various special functions
+        void operator +(Matrix m2){
+    		int rows = r;	
+    		int col = c + m2.c;
+		    int array[col];
+		    Matrix m;
+		    m.r = rows;
+		    m.c = (c > m2.c)?(m2.c):c;
+		    int i, j, i1, j1, maxInd, temp;
+		    for(i = 0; i < rows; i++){
+			    for(j = 0; j < c; j++){
+				    array[j] = matrix[i][j];
+			    }
+			    for(j = 0; j < m2.c; j++){
+				    array[c + j] = m2.matrix[i][j];
+			    }			
+			    maxInd = 0;	
+                std::sort(array, array+c+m2.c, comp);
+			    /*for(i1 = 0; i1 < col; i1++){
+				    maxInd = i1;
+				    for(j1 = i1; j1 < col; j1++){
+					    if(std::abs(array[j1]) > std::abs(array[maxInd])){
+						    maxInd = j1;
+					    }
+				    }
+				    if(i1 != maxInd){
+					    temp = array[i1];
+					    array[i1] = array[maxInd];
+					    array[maxInd] = temp;
+                    }
+			    }*/
+			    for(j = 0; j < col; j++){
+				    m.matrix[i][j] = array[j];
+			    }
+		    }
+		    m.print();
+	    } //SPC
+
+         void operator &(){
+            int i, j, sum = 0;
+            Matrix m;
+            m.r = r;
+            m.c = c;
+            for(i = 0; i < r; i++){
+                for(j = 0; j < c; j++){
+                    m.matrix[i][j] = matrix[i][j];
+                }
+             } //copying the elements of the matrix into another matrix m
+            for(i = 0; i < r; i++){
+                sort1(m.matrix[i], m.c);
+            } //sorting each row of m in ascendiing order
+
+            int colInd[c];      
+            int curr = m.r - 1;
+            colInd[curr] = m.c-1;
+            int flag = m.funMSM(colInd, curr);
+  
+            if(flag == 0){  
+                std::cout << "NO\n";
+            }
+            else{
+                for(i = 0; i <= m.r-1; i++){
+
+                    sum += m.matrix[i][colInd[i]];
+                }
+                std::cout << sum << "\n";
+            }
+        } //MSM
+
+        void operator -(Matrix kernel){
+    		Matrix convol;
+		    int i, j, k1, k2, sum, row, col;
+		    row = kernel.r;
+		    col = kernel.c;
+		    int a = r - kernel.r + 1;
+		    int b = c - kernel.c + 1;
+		    convol.r = a;
+		    convol.c = b;
+		    for(i = 0; i < a; i++){
+			    for(j = 0; j < b; j++){
+				    sum = 0;
+				    for(k1 = 0; k1 < row; k1++){
+					    for(k2 = 0; k2 < col; k2++){
+						    sum += (matrix[i+k1][j+k2]*kernel.matrix[k1][k2]);
+					    }
+				    }
+				    convol.matrix[i][j] = sum;
+			    }
+		    }
+		    convol.print();
+	    } //CONV
+
+        void operator *(int k){
+    		int i, l;
+		    for(l = 1; l <= k; l++){
+			    int a1 = matrix[0][0];
+			    int b1 = matrix[0][c-1];
+			    int c1 = matrix[r-1][c-1];
+			    int d1 = matrix[r-1][0];
+			    for(i = c-1; i >= 0; i--){
+				    matrix[0][i+1] = matrix[0][i];
+			    }
+			    for(i = r-1; i >= 2; i--){
+				    matrix[i][c-1] = matrix[i-1][c-1];
+			    }
+			    matrix[1][c-1] = b1;
+			    for(i = 0; i <= r-2; i++){
+				    matrix[r-1][i] = matrix[r-1][i+1];
+			    }
+			    matrix[r-1][c-2] = c1;
+			    for(i = 0; i <= r-2; i++){
+				    matrix[i][0] = matrix[i+1][0];
+			    }
+			    matrix[r-2][0] = d1;
+		    }
+		    print();
+	    } //ROT
+};
+
+int main(){
+	int N;
+	std::cin >> N;
+	std::cin.ignore();
+
+	int i, i1, j;
+	int input[2];
+
+	std::string str;
+	std::string tok;	
+
+	for(i = 0; i < N; i++){
+		std::cin >> str;
+
+		if(str == "SPC"){			
+			std::cin.ignore();
+			std::getline(std::cin, str);
+			std::stringstream s(str);
+			j = 0;
+			while(s >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m1;
+			m1.r = input[0];
+			m1.c = input[1];
+			for(i1 = 0; i1 < m1.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s1(str);
+				j = 0;
+				while(s1 >> tok){
+					m1.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m1.c){
+						break;
+					}
+				}
+			}			
+
+			std::getline(std::cin, str);
+			std::stringstream s2(str);
+
+			int j = 0;
+			while(s2 >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m2;
+			m2.r = input[0];
+			m2.c = input[1];
+			for(i1 = 0; i1 < m2.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s3(str);
+				j = 0;
+				while(s3 >> tok){
+					m2.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m2.c){
+						break;
+					}
+				}
+			}
+			m1 + m2;
+		}
+
+		else if(str == "MSM"){					
+			std::cin.ignore();	
+			std::getline(std::cin, str);
+			std::stringstream s(str);
+			j = 0;
+			while(s >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m;
+			m.r = input[0];
+			m.c = input[1];
+			for(i1 = 0; i1 < m.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s1(str);
+				j = 0;
+				while(s1 >> tok){
+					m.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m.c){
+						break;
+					}
+				}
+			}
+			&m;
+		}
+
+		else if(str == "CONV"){		
+			std::cin.ignore();
+			std::getline(std::cin, str);
+			std::stringstream s(str);
+			j = 0;
+			while(s >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m1;
+			m1.r = input[0];
+			m1.c = input[1];
+			for(i1 = 0; i1 < m1.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s1(str);
+				j = 0;
+				while(s1 >> tok){
+					m1.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m1.c){
+						break;
+					}
+				}
+			}		
+
+			std::getline(std::cin, str);
+			std::stringstream s2(str);
+			int j = 0;
+			while(s2 >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m2;
+			m2.r = input[0];
+			m2.c = input[1];
+			for(i1 = 0; i1 < m2.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s3(str);
+				j = 0;
+				while(s3 >> tok){
+					m2.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m2.c){
+						break;
+					}
+				}
+			}
+            m1 - m2;
+		}
+        
+		else if(str == "ROT"){		
+			std::cin.ignore();
+			std::getline(std::cin, str);
+			std::stringstream s(str);
+			j = 0;
+			while(s >> tok){
+				input[j] = std::stoi(tok);
+				j++;
+				if(j == 2){
+					break;
+				}
+			}
+
+			Matrix m;
+			m.r = input[0];
+			m.c = input[1];
+
+			for(i1 = 0; i1 < m.r; i1++){
+				std::getline(std::cin, str);
+				std::stringstream s1(str);
+				j = 0;
+				while(s1 >> tok){
+					m.matrix[i1][j] = std::stoi(tok);
+					j++;
+					if(j == m.c){
+						break;
+					}
+				}
+			}
+            int k;
+			std::cin >> k;
+			m * k;
+		}
+	}
+	return 0;
+}
