@@ -1,82 +1,101 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
-#include"rb_tree.h"
-
-#define RED 0
-#define BLACK 1
-#define DEFAULT 7
-#define DUMMY 9999
-#define LEAF -1
+#include"disjoint_set.h"
 
 int main(void)
 {
-	srand(time(NULL));
-
-	printf("Let us look at the simulation of a red-black tree!\n\n");	
-	int n = DEFAULT;	
-	
-	Tree* root = newNode(DUMMY); //creating the root node
-	root->parent = nil(); //making the parent of root, nil
-
-	createTree(n, &root); //creating an initial red-black tree, having nodes with some predefined keys, all black in colour
-
-	levelOrderTraversal(root); //printing the initial tree
-	
-	int q, choice, lim, ctr;
-	Tree* temp;
-
-	printf("Enter the number of runs:\n"); //asking the user for number of runs
-	scanf("%d", &lim);
-
-	clock_t start, end; //declaring the clock variables to store the start and end time of execution
-	
-	start = clock(); //storing the start time of execution
-
-	ctr = 1; 
-	while(ctr <= lim)
+	printf("Disjoint set union and find operation!\n");
+	int n;
+	printf("Enter the number of singleton disjoint 'sets'\n"); //taking the value of number of elements in the set
+	scanf("%d", &n);
+	int i, j;
+	Node* temp[n]; //creating an array of "nodes"
+	printf("Please supply the values of the elements one-by-one...\n");
+	for(i = 0; i < n; i++) //initializing the array of nodes, as per the values entered by the user
 	{
-		choice = generate_choice(); //generating a random option to decide which operation is to be carried out		
-
-		/*if(choice == 1) //look-up operation
-		{
-			q = (rand()%1000) + 1; //generating a random key between 1 and 1000 to be looked up
-			lookup(root, q); //calling the look-up function
-		}
-		*/
-
-		if(choice == 2)//delete operation
-		{
-			q = 1 + rand()%1000; //generating a random key between 1 and 1000 to be deleted from the tree
-			temp = lookup(root, q); //checking if the key is present in the tree or not
-			if(temp != NULL)
-			{
-				deleteNode(&root, &temp); //deleting the node from the tree
-			}
-			printf("deletion\n");
-		}
-		else //insert operation
-		{
-			q = (rand()%1000) + 1; //generating a random key between 1 and 1000 to be inserted into the tree
-			temp = lookup(root, q); //checking if that key is already present in the tree or not
-			if(temp == NULL)
-			{
-				temp = newNode(q); //creating a new node
-				insertNode(&root, &temp); //inserting the node into the red black tree				
-			}
-			printf("insertion\n");
-		}
-		
-		levelOrderTraversal(root); //printing the tree at this stage
-
-		ctr++; //incrementing the value of the loop counter variable
-		
+		temp[i] = (Node*)malloc(sizeof(Node));
+		printf("Enter the element, array[%d]\t", i);
+		scanf("%d", &j);
+		make(&(temp[i]), j); //calling the make function that creates a new "node"
 	}
 
-	end = clock(); //storing the end time of execution
+	printf("The array of elements is:\n");
+	//printing the array of elements
+	for(i = 0; i < n; i++)
+	{
+		printf("%d\t", temp[i]->key);
+	}
+
+	printf("\n");
+
+	int m, x1, x2, choice;
+	Node* x;
+	Node* y;
+	printf("Enter the number of operations\n"); //taking the number of unite + findSet operations to be performed on the set
+	scanf("%d", &m);
+
+	for(i = 1; i <= m; i++) //running a for-loop 'm' number of times
+	{
+		printf("Enter the choice: 1-union, 2-findset\t"); //asking the user for the choice
+		scanf("%d", &choice);
+		if(choice == 1) //unite operation
+		{
+			printf("Enter the two keys whose sets you want to unite (separated by a space)\t");
+			scanf("%d %d", &x1, &x2);
+			x = lookup(x1, n, temp);
+			y = lookup(x2, n, temp);
+			if(x == NULL || y == NULL) //if no such element is there in the array
+			{
+				printf("Invalid entries\n");
+				continue;
+			}
+			else
+			{
+				printf("Uniting the sets of %d and %d\n", x1, x2);
+				unite(&x, &y); //calling the unite() function
+			}
+		}
+		else if(choice == 2)//findSet operation
+		{
+			printf("Enter the key, the leader of whose set you want to find\t");
+			scanf("%d", &x1);			
+			x = lookup(x1, n, temp);
+			if(x == NULL) //if no such element is there in the array
+			{
+				printf("Invalid entry\n");
+				continue;
+			}
+			else
+			{
+				printf("Finding the leader of the set containing %d\n", x1);
+				y = findSet(&x); //calling the findSet() function
+				printf("The leader of this set is %d\n", y->key);
+			}				
+		}
+		else
+		{
+			printf("Sorry, invalid entry!\n");
+			continue;
+		}
 	
-	double time_taken = (double)(end - start)/CLOCKS_PER_SEC; //finding the total execution time
-	printf("Avg time taken = %.10lf\n", time_taken/lim); //printing the avg execution time
-	
+
+		for(j = 0; j < n; j++) //printing the keys with thir parents
+		{
+			printf("%d--->%d\t", temp[j]->key, (temp[j]->parent)->key);
+		}
+		printf("\n\n");		
+	}
+
+	printf("\n\n\n");
+	//printing the nodes and their parents
+	printf("Finally...\n");
+	printf("Nodes and their parents are:\n\n");
+	for(i = 0; i < n; i++)
+	{
+		printf("%d--->%d\t", temp[i]->key, (temp[i]->parent)->key);
+	}
+	printf("\n\n");
+
 	return 0;
 }
